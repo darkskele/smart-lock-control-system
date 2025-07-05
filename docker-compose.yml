@@ -1,0 +1,23 @@
+services:
+  # Define a service named 'mqtt-broker'
+  mqtt-broker:
+    # Use the official Eclipse Mosquitto image from Docker Hub
+    image: eclipse-mosquitto
+
+    container_name: mqtt-broker
+
+    # Map port 1883 from the container to the host
+    # This allows MQTT clients to connect to localhost:1883 on the host
+    ports:
+      - "1883:1883"
+
+    # Mount configuration files into the container
+    volumes:
+      # Mount custom Mosquitto config file from host to container path
+      - ./broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+      # Mount password file for authentication
+      - ./broker/passwd:/mosquitto/config/passwd
+
+    # Automatically restart the container if it stops or system reboots
+    restart: unless-stopped
