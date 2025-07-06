@@ -1,0 +1,23 @@
+[project]
+name = "smart-lock-control-system"
+version = "0.1.0"
+description = "Lightweight MQTT-based backend system for remotely controlling and monitoring smart locks. Designed for headless deployment on Raspberry Pi."
+authors = [
+    {name = "dbowm",email = "daniel.bowman24@imperial.ac.uk"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "paho-mqtt (>=2.1.0,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.1"
+python-dotenv = "^1.1.1"
+
