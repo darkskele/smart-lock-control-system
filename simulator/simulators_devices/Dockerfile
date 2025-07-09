@@ -20,5 +20,5 @@ RUN poetry install --no-root
 ENV PYTHONPATH=/app
 ENV TLS_CA_CERT=/certs/ca.crt
 
-# Run your device
+# Default fallback (compose file should override this)
 CMD ["python", "simulator/simulators_devices/lock-01/run_device.py"]
