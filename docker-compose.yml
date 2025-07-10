@@ -23,6 +23,108 @@ services:
 
       # Mount self CA certificates
       - ./broker/certs:/mosquitto/config/certs
+      - ./certs/ca.crt:/mosquitto/config/certs/ca.crt
+
+      # Mount data and logs
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
 
     # Automatically restart the container if it stops or system reboots
     restart: unless-stopped
+
+    # Add timed healthcheck
+    healthcheck:
+      test: [
+        "CMD", "mosquitto_sub",
+        "-h", "localhost",
+        "-p", "8883",
+        "--cafile", "/mosquitto/config/certs/ca.crt",
+        "-u", "lock_01",
+        "-P", "pwd01",
+        "-t", "$$SYS/broker/version",
+        "-C", "1"
+      ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  # Simulated Smart Lock Device
+  lock-01:
+    build:
+      context: .                          # Lock 1 directory
+      dockerfile: simulator/simulators_devices/Dockerfile
+
+    container_name: lock-01            # Named container for clarity
+
+    env_file:
+      - ./simulator/simulators_devices/lock-01/.env        # Device-specific config here
+
+    volumes:
+      - ./simulator/simulators_devices/lock-01/certs:/certs         # Mount devices certs directory to /certs
+      - ./certs/ca.crt:/certs/ca.crt
+
+    depends_on:
+      - mqtt-broker                       # Ensure broker starts before device tries to connect
+    # Parameterize docker CMD
+    command: python simulator/simulators_devices/lock-01/run_device.py
+
+  lock-02:
+    build:
+      context: .                          # Lock 2 directory
+      dockerfile: simulator/simulators_devices/Dockerfile
+
+    container_name: lock-02            # Named container for clarity
+
+    env_file:
+      - ./simulator/simulators_devices/lock-02/.env        # Device-specific config here
+
+    volumes:
+      - ./simulator/simulators_devices/lock-02/certs:/certs         # Mount devices certs directory to /certs
+      - ./certs/ca.crt:/certs/ca.crt
+
+    depends_on:
+      - mqtt-broker                       # Ensure broker starts before device tries to connect
+    # Parameterize docker CMD
+    command: python simulator/simulators_devices/lock-02/run_device.py
+
+  lock-03:
+    build:
+      context: .                          # Lock 3 directory
+      dockerfile: simulator/simulators_devices/Dockerfile
+
+    container_name: lock-03            # Named container for clarity
+
+    env_file:
+      - ./simulator/simulators_devices/lock-03/.env        # Device-specific config here
+
+    volumes:
+      - ./simulator/simulators_devices/lock-03/certs:/certs         # Mount devices certs directory to /certs
+      - ./certs/ca.crt:/certs/ca.crt
+
+    depends_on:
+      - mqtt-broker                       # Ensure broker starts before device tries to connect
+    # Parameterize docker CMD
+    command: python simulator/simulators_devices/lock-03/run_device.py
+
+  lock-04:
+    build:
+      context: .                          # Lock 4 directory
+      dockerfile: simulator/simulators_devices/Dockerfile
+
+    container_name: lock-04            # Named container for clarity
+
+    env_file:
+      - ./simulator/simulators_devices/lock-04/.env        # Device-specific config here
+
+    volumes:
+      - ./simulator/simulators_devices/lock-04/certs:/certs         # Mount devices certs directory to /certs
+      - ./certs/ca.crt:/certs/ca.crt
+
+    depends_on:
+      - mqtt-broker                       # Ensure broker starts before device tries to connect
+    # Parameterize docker CMD
+    command: python simulator/simulators_devices/lock-04/run_device.py
+
+# Persist outside of container
+volumes:
+  mosquitto_data:
+  mosquitto_log:
