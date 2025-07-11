@@ -4,10 +4,9 @@ simulator
 Simulator module, includes mqtt wrapper and device base.
 """
 
-from .base_device.device_base import DeviceBase
-from .mqtt_wrapper.mqtt_device_wrapper import MQTTDeviceWrapper
+from .import base_device, mqtt_wrapper
 
 __all__ = [
-    "DeviceBase",
-    "MQTTDeviceWrapper",
+    "base_device",
+    "mqtt_wrapper",
 ]
