@@ -4,8 +4,8 @@ import logging
 from typing import Dict
 from simulator.mqtt_wrapper.mqtt_device_wrapper import MQTTDeviceWrapper
 
-logger = logging.getLogger("MQTTDevice")
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger("MQTTDeviceBase")
+
 
 class DeviceBase:
     """

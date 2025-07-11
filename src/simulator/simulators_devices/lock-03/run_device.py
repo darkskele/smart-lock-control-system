@@ -4,7 +4,8 @@ from simulator.base_device.device_base import DeviceBase
 
 logging.basicConfig(level=logging.DEBUG, format="[%(name)s] %(levelname)s: %(message)s")
 
-class SmartLock01(DeviceBase):
+
+class SmartLock03(DeviceBase):
     """
     Simulated Smart Lock device that extends the base MQTT device.
     """
@@ -14,7 +15,7 @@ class SmartLock01(DeviceBase):
         Initializes the SmartLock device with a unique device ID.
         The base class handles MQTT setup and default command registration.
         """
-        device_id = os.getenv("DEVICE_ID", "lock-01")
+        device_id = os.getenv("DEVICE_ID", "lock-03")
         super().__init__(device_id=device_id)
 
     def status(self):
@@ -26,16 +27,18 @@ class SmartLock01(DeviceBase):
         """
         return {
             "state": "locked" if self.state["locked"] else "unlocked",
-            "battery_percent": 87,
-            "firmware_version": "1.0.1"
+            "battery_percent": 13,
+            "firmware_version": "1.4.6",
         }
 
 
 if __name__ == "__main__":
     """
-    Entry point for running the SmartLock01 device.
+    Entry point for running the SmartLock03 device.
     """
     try:
-        SmartLock01().run()
+        SmartLock03().run()
     except Exception as ex:
-        logging.getLogger("SmartLock01").exception(f"Unhandled exception in SmartLock01: {ex}")
+        logging.getLogger("SmartLock03").exception(
+            f"Unhandled exception in SmartLock03: {ex}"
+        )
