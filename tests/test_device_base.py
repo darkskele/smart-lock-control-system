@@ -55,7 +55,9 @@ class TestDeviceBase(unittest.TestCase):
         self.device.setup()
 
         self.mock_wrapper.register_command.assert_any_call("lock", self.device._lock)
-        self.mock_wrapper.register_command.assert_any_call("unlock", self.device._unlock)
+        self.mock_wrapper.register_command.assert_any_call(
+            "unlock", self.device._unlock
+        )
         self.mock_wrapper.register_publisher.assert_called_once_with(self.device.status)
 
     @patch("simulator.base_device.device_base.MQTTDeviceWrapper.from_env")
