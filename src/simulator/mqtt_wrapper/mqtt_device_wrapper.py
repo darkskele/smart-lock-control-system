@@ -5,8 +5,8 @@ import ssl
 import paho.mqtt.client as mqtt
 from typing import Callable, Optional, Dict
 
-logger = logging.getLogger("MQTTDevice")
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger("MQTTDeviceWrapper")
+
 
 class MQTTDeviceWrapper:
     """
@@ -59,8 +59,10 @@ class MQTTDeviceWrapper:
         self._command_handlers: Dict[str, Callable[[], None]] = {}
         self._status_publisher: Optional[Callable[[], dict]] = None
 
-        # Give python control of verification 
-        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=ca_cert_path)
+        # Give python control of verification
+        context = ssl.create_default_context(
+            ssl.Purpose.SERVER_AUTH, cafile=ca_cert_path
+        )
         context.check_hostname = True
         context.verify_mode = ssl.CERT_REQUIRED
 
@@ -181,7 +183,9 @@ class MQTTDeviceWrapper:
                 logger.info(f"[{self.device_id}] Received status request")
                 # Missing action in get status
                 if not action:
-                    logger.warning(f"[{self.device_id}] No 'action' in get status payload")
+                    logger.warning(
+                        f"[{self.device_id}] No 'action' in get status payload"
+                    )
                     # Application is probably waiting for a response
                     self._publish_status(error="missing action")
                     return
