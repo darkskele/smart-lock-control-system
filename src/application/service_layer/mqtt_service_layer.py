@@ -1,4 +1,5 @@
 import json
+import os
 import threading
 import time
 import queue
@@ -83,6 +84,32 @@ class MQTTService:
         self._reconnect_attempts: int = 0
         self._last_message_received_time: Optional[float] = None
         self._metrics_lock = threading.Lock()
+
+    @classmethod
+    def from_env(cls) -> "MQTTService":
+        """
+        Creates an instance of MQTTService using environment variables.
+
+        This method loads connection parameters from the environment and constructs
+        a fully configured MQTTService instance, ready for use in Dockerized or
+        host-based deployments.
+
+        Returns:
+            MQTTService: An initialized MQTTService instance.
+
+        Raises:
+            KeyError: If required environment variables are missing.
+            ValueError: If MQTT_PORT is not a valid integer.
+        """
+        return cls(
+            broker_host=os.environ["MQTT_HOST"],
+            broker_port=int(os.environ.get("MQTT_PORT", "8883")),
+            username=os.environ["MQTT_USERNAME"],
+            password=os.environ["MQTT_PASSWORD"],
+            tls_ca=os.environ.get("MQTT_CA"),
+            tls_cert=os.environ.get("MQTT_CERT"),
+            tls_key=os.environ.get("MQTT_KEY"),
+        )
 
     @property
     def connected(self) -> bool:
