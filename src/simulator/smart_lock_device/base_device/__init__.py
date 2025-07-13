@@ -1,5 +1,5 @@
 """
-base_device
+simulator.smart_lock_device.base_device
 
 Base device class for derived devices.
 """

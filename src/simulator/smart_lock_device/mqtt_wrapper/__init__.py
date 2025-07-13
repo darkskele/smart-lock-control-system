@@ -1,5 +1,5 @@
 """
-mqtt_device_wrapper
+simulator.smart_lock_device.mqtt_device_wrapper
 
 Device wrapper for MQTT smart lock comms.
 """

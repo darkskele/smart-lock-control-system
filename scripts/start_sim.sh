@@ -36,7 +36,7 @@ bash "$SCRIPTS_DIR/generate_cert.sh" broker ./broker/certs
 
 for i in $(seq -w 1 $NUM_DEVICES); do
   DEVICE_ID="lock-0$i"
-  DEVICE_CERT_DIR="$PROJECT_ROOT/simulator/simulators_devices/$DEVICE_ID/certs"
+  DEVICE_CERT_DIR="$PROJECT_ROOT/src/simulator/simulators_devices/$DEVICE_ID/certs"
 
   echo "Generating TLS certificate for device '$DEVICE_ID'..."
   bash "$SCRIPTS_DIR/generate_cert.sh" "$DEVICE_ID" "$DEVICE_CERT_DIR"

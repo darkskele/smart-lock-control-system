@@ -47,82 +47,46 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-  # Simulated Smart Lock Device
+  # Shared lock template
+  lock-base: &lock-template
+    build:
+      context: .
+      dockerfile: src/simulator/simulators_devices/Dockerfile
+    depends_on:
+      - mqtt-broker
+  # Simulated Smart Lock Device - each point to there own env and certs
   lock-01:
-    build:
-      context: .                          # Lock 1 directory
-      dockerfile: simulator/simulators_devices/Dockerfile
-
-    container_name: lock-01            # Named container for clarity
-
-    env_file:
-      - ./simulator/simulators_devices/lock-01/.env        # Device-specific config here
-
-    volumes:
-      - ./simulator/simulators_devices/lock-01/certs:/certs         # Mount devices certs directory to /certs
-      - ./certs/ca.crt:/certs/ca.crt
-
-    depends_on:
-      - mqtt-broker                       # Ensure broker starts before device tries to connect
-    # Parameterize docker CMD
-    command: python simulator/simulators_devices/lock-01/run_device.py
-
+      <<: *lock-template
+      container_name: lock-01
+      env_file: ./src/simulator/simulators_devices/lock-01/.env
+      volumes:
+        - ./src/simulator/simulators_devices/lock-01/certs:/certs
+        - ./certs/ca.crt:/certs/ca.crt 
+      command: python src/simulator/simulators_devices/lock-01/run_device.py
   lock-02:
-    build:
-      context: .                          # Lock 2 directory
-      dockerfile: simulator/simulators_devices/Dockerfile
-
-    container_name: lock-02            # Named container for clarity
-
-    env_file:
-      - ./simulator/simulators_devices/lock-02/.env        # Device-specific config here
-
+    <<: *lock-template
+    container_name: lock-02
+    env_file: ./src/simulator/simulators_devices/lock-02/.env
     volumes:
-      - ./simulator/simulators_devices/lock-02/certs:/certs         # Mount devices certs directory to /certs
-      - ./certs/ca.crt:/certs/ca.crt
-
-    depends_on:
-      - mqtt-broker                       # Ensure broker starts before device tries to connect
-    # Parameterize docker CMD
-    command: python simulator/simulators_devices/lock-02/run_device.py
-
+      - ./src/simulator/simulators_devices/lock-02/certs:/certs
+      - ./certs/ca.crt:/certs/ca.crt 
+    command: python src/simulator/simulators_devices/lock-02/run_device.py
   lock-03:
-    build:
-      context: .                          # Lock 3 directory
-      dockerfile: simulator/simulators_devices/Dockerfile
-
-    container_name: lock-03            # Named container for clarity
-
-    env_file:
-      - ./simulator/simulators_devices/lock-03/.env        # Device-specific config here
-
+    <<: *lock-template
+    container_name: lock-03
+    env_file: ./src/simulator/simulators_devices/lock-03/.env
     volumes:
-      - ./simulator/simulators_devices/lock-03/certs:/certs         # Mount devices certs directory to /certs
-      - ./certs/ca.crt:/certs/ca.crt
-
-    depends_on:
-      - mqtt-broker                       # Ensure broker starts before device tries to connect
-    # Parameterize docker CMD
-    command: python simulator/simulators_devices/lock-03/run_device.py
-
+      - ./src/simulator/simulators_devices/lock-03/certs:/certs
+      - ./certs/ca.crt:/certs/ca.crt 
+    command: python src/simulator/simulators_devices/lock-03/run_device.py
   lock-04:
-    build:
-      context: .                          # Lock 4 directory
-      dockerfile: simulator/simulators_devices/Dockerfile
-
-    container_name: lock-04            # Named container for clarity
-
-    env_file:
-      - ./simulator/simulators_devices/lock-04/.env        # Device-specific config here
-
+    <<: *lock-template
+    container_name: lock-04
+    env_file: ./src/simulator/simulators_devices/lock-04/.env
     volumes:
-      - ./simulator/simulators_devices/lock-04/certs:/certs         # Mount devices certs directory to /certs
-      - ./certs/ca.crt:/certs/ca.crt
-
-    depends_on:
-      - mqtt-broker                       # Ensure broker starts before device tries to connect
-    # Parameterize docker CMD
-    command: python simulator/simulators_devices/lock-04/run_device.py
+      - ./src/simulator/simulators_devices/lock-04/certs:/certs
+      - ./certs/ca.crt:/certs/ca.crt 
+    command: python src/simulator/simulators_devices/lock-04/run_device.py
 
 # Persist outside of container
 volumes:
