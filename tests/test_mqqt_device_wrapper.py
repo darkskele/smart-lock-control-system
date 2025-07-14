@@ -1,7 +1,7 @@
 import unittest
 import os
 from unittest.mock import patch, MagicMock
-from simulator.mqtt_wrapper.mqtt_device_wrapper import MQTTDeviceWrapper
+from simulator.smart_lock_device.mqtt_wrapper.mqtt_device_wrapper import MQTTDeviceWrapper
 
 
 class TestMQTTDeviceWrapper(unittest.TestCase):

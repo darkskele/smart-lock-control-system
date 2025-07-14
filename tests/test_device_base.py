@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from simulator.base_device import DeviceBase
+from simulator.smart_lock_device.base_device import DeviceBase
 
 
 # Dummy subclass used to test DeviceBase behavior without triggering NotImplementedError
@@ -12,7 +12,7 @@ class DummyDevice(DeviceBase):
 
 class TestDeviceBase(unittest.TestCase):
 
-    @patch("simulator.base_device.device_base.MQTTDeviceWrapper.from_env")
+    @patch("simulator.smart_lock_device.base_device.device_base.MQTTDeviceWrapper.from_env")
     def setUp(self, mock_from_env):
         """
         Sets up the test environment by patching the MQTTDeviceWrapper dependency
@@ -60,7 +60,7 @@ class TestDeviceBase(unittest.TestCase):
         )
         self.mock_wrapper.register_publisher.assert_called_once_with(self.device.status)
 
-    @patch("simulator.base_device.device_base.MQTTDeviceWrapper.from_env")
+    @patch("simulator.smart_lock_device.base_device.device_base.MQTTDeviceWrapper.from_env")
     def test_base_status_raises(self, mock_from_env):
         """
         Confirm that the base `DeviceBase.status()` method raises NotImplementedError
