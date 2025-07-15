@@ -1,0 +1,144 @@
+services:
+  # Define a service named 'mqtt-broker'
+  mqtt-broker:
+    # Use the official Eclipse Mosquitto image from Docker Hub
+    image: eclipse-mosquitto
+
+    container_name: mqtt-broker
+
+    # Map 8883 for secure TLS encrypted MQTT
+    ports:
+      - "8883:8883"   # Secure MQTT
+
+    # Mount configuration files into the container
+    volumes:
+      # Mount custom Mosquitto config file from host to container path
+      - ./broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+      # Mount password file for authentication
+      - ./broker/passwd:/mosquitto/config/passwd
+
+      # Mount self CA certificates
+      - ./broker/certs:/mosquitto/config/certs
+      - ./certs/ca.crt:/mosquitto/config/certs/ca.crt
+
+      # Mount data and logs
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+
+    # Automatically restart the container if it stops or system reboots
+    restart: unless-stopped
+
+    # Add timed healthcheck
+    healthcheck:
+      test: [
+        "CMD", "mosquitto_sub",
+        "-h", "localhost",
+        "-p", "8883",
+        "--cafile", "/mosquitto/config/certs/ca.crt",
+        "-u", "lock_01",
+        "-P", "pwd01",
+        "-t", "$$SYS/broker/version",
+        "-C", "1"
+      ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  # Simulated Smart Lock Device - each point to there own env
+  lock-01:
+    build:
+      context: .
+      dockerfile: src/simulator/simulators_devices/Dockerfile
+    volumes:
+      - ./certs/ca.crt:/certs/ca.crt 
+    container_name: lock-01
+    environment:
+      - DEVICE_ID=lock-01
+      - MQTT_HOST=mqtt-broker
+      - PORT=8883
+      - MQTT_USERNAME=lock_01
+      - MQTT_PASSWORD=pwd01
+      - MQTT_CA=/certs/ca.crt
+      - LOG_LEVEL=INFO
+    depends_on:
+      - mqtt-broker
+    command: python src/simulator/simulators_devices/lock-01/run_device.py
+  lock-02:
+    build:
+      context: .
+      dockerfile: src/simulator/simulators_devices/Dockerfile
+    volumes:
+      - ./certs/ca.crt:/certs/ca.crt 
+    container_name: lock-02
+    environment:
+      - DEVICE_ID=lock-02
+      - MQTT_HOST=mqtt-broker
+      - PORT=8883
+      - MQTT_USERNAME=lock_02
+      - MQTT_PASSWORD=pwd02
+      - MQTT_CA=/certs/ca.crt
+      - LOG_LEVEL=INFO
+    depends_on:
+      - mqtt-broker
+    command: python src/simulator/simulators_devices/lock-02/run_device.py
+  lock-03:
+    build:
+      context: .
+      dockerfile: src/simulator/simulators_devices/Dockerfile
+    volumes:
+      - ./certs/ca.crt:/certs/ca.crt 
+    container_name: lock-03
+    environment:
+      - DEVICE_ID=lock-03
+      - MQTT_HOST=mqtt-broker
+      - PORT=8883
+      - MQTT_USERNAME=lock_03
+      - MQTT_PASSWORD=pwd03
+      - MQTT_CA=/certs/ca.crt
+      - LOG_LEVEL=INFO
+    depends_on:
+      - mqtt-broker
+    command: python src/simulator/simulators_devices/lock-03/run_device.py
+  lock-04:
+    build:
+      context: .
+      dockerfile: src/simulator/simulators_devices/Dockerfile
+    volumes:
+      - ./certs/ca.crt:/certs/ca.crt 
+    container_name: lock-04
+    environment:
+      - DEVICE_ID=lock-04
+      - MQTT_HOST=mqtt-broker
+      - PORT=8883
+      - MQTT_USERNAME=lock_04 
+      - MQTT_PASSWORD=pwd04
+      - MQTT_CA=/certs/ca.crt
+      - LOG_LEVEL=INFO
+    depends_on:
+      - mqtt-broker
+    command: python src/simulator/simulators_devices/lock-04/run_device.py
+  cli:
+    build:
+      context: .
+      dockerfile: src/application/Dockerfile
+    container_name: cli
+    stdin_open: true           # Allow interactive CLI
+    tty: true                  # Attach a terminal
+    environment:
+      - DEVICE_ID=cli
+      - MQTT_HOST=mqtt-broker
+      - MQTT_PORT=8883
+      - MQTT_USERNAME=lockmgr 
+      - MQTT_PASSWORD=mstpwd
+      - MQTT_CA=/certs/ca.crt
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./certs/ca.crt:/certs/ca.crt
+    depends_on:
+      - mqtt-broker
+    command: python src/application/main.py
+
+# Persist outside of container
+volumes:
+  mosquitto_data:
+  mosquitto_log:
