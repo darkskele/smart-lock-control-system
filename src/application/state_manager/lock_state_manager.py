@@ -205,8 +205,6 @@ class LockManager:
         # Checks thread safe properties in service layer
         return {
             "connected": self._mqtt_service.connected,
-            "last_reconnect_attempt_time": self._mqtt_service.last_reconnect_attempt_time,
-            "reconnect_attempts": self._mqtt_service.reconnect_attempts,
             "last_message_received_time": self._mqtt_service.last_message_received_time,
         }
 

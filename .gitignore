@@ -1,4 +1,2 @@
-passwd
 certs/
-.env
 __pycache__/

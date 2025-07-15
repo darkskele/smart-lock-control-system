@@ -35,3 +35,4 @@ rebuild:
 
 test:
 	docker-compose -f docker-compose.yml -f docker-compose.test.yml up --build --exit-code-from cli
+	docker-compose down --remove-orphans

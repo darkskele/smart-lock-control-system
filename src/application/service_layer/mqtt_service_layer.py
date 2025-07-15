@@ -76,8 +76,6 @@ class MQTTService:
         self._set_connected(False)
 
         # Connection metrics
-        self._last_reconnect_attempt_time: Optional[float] = None
-        self._reconnect_attempts: int = 0
         self._last_message_received_time: Optional[float] = None
         self._metrics_lock = threading.Lock()
 
@@ -116,30 +114,6 @@ class MQTTService:
         """
         with self._lock:
             return self._connected
-
-    @property
-    def last_reconnect_attempt_time(self) -> Optional[float]:
-        """
-        Get the timestamp of the last reconnect attempt.
-
-        Returns:
-            Optional[float]: The Unix timestamp (in seconds) of the most recent reconnect attempt,
-                            or None if no reconnect has been attempted yet.
-        """
-        with self._metrics_lock:
-            return self._last_reconnect_attempt_time
-
-    @property
-    def reconnect_attempts(self) -> int:
-        """
-        Get the number of consecutive failed reconnect attempts.
-
-        Returns:
-            int: The number of times the client has attempted to reconnect
-                since the last successful connection. This resets to 0 upon a successful connect.
-        """
-        with self._metrics_lock:
-            return self._reconnect_attempts
 
     @property
     def last_message_received_time(self) -> Optional[float]:
