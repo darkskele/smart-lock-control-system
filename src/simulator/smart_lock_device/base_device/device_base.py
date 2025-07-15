@@ -2,7 +2,9 @@ import os
 import time
 import logging
 from typing import Dict
-from simulator.mqtt_wrapper.mqtt_device_wrapper import MQTTDeviceWrapper
+from simulator.smart_lock_device.mqtt_wrapper.mqtt_device_wrapper import (
+    MQTTDeviceWrapper,
+)
 
 logger = logging.getLogger("MQTTDeviceBase")
 

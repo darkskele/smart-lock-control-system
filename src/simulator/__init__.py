@@ -4,9 +4,8 @@ simulator
 Simulator module, includes mqtt wrapper and device base.
 """
 
-from . import base_device, mqtt_wrapper
+from .smart_lock_device import SmartLock
 
 __all__ = [
-    "base_device",
-    "mqtt_wrapper",
+    "SmartLock",
 ]
