@@ -205,8 +205,6 @@ class LockManager:
         # Checks thread safe properties in service layer
         return {
             "connected": self._mqtt_service.connected,
-            "last_reconnect_attempt_time": self._mqtt_service.last_reconnect_attempt_time,
-            "reconnect_attempts": self._mqtt_service.reconnect_attempts,
             "last_message_received_time": self._mqtt_service.last_message_received_time,
         }
 
@@ -229,7 +227,7 @@ class LockManager:
         payload = {"action": action}
         return self._publish_and_wait(lock_id, topic, payload, timeout)
 
-    def lock(self, lock_id: str) -> Optional[Dict[str, Any]]:
+    def lock(self, lock_id: str, retry_attempts: int = 5) -> Optional[Dict[str, Any]]:
         """
         Sends a lock command to the specified device and waits for a response.
 
@@ -239,15 +237,22 @@ class LockManager:
 
         Args:
             lock_id: The unique identifier of the lock device to control.
+            retry_attempts: The max number of retry attempts before giving up.
 
         Returns:
             A dictionary containing the updated device state, or None if the device
             is unknown. If the device fails to respond in time, the state will include
             {"connected": False, "error": "timeout"}.
         """
-        return self._send_command_and_wait(lock_id, "lock")
+        logger.debug(f"[{lock_id}] Device commanded to lock!")
+        # Try to get correct status
+        for _ in range(retry_attempts):
+            result = self._send_command_and_wait(lock_id, "lock")
+            if result and result.get("error") is None and result.get("state") == "locked":
+                break
+        return result
 
-    def unlock(self, lock_id: str) -> Optional[Dict[str, Any]]:
+    def unlock(self, lock_id: str, retry_attempts: int = 5) -> Optional[Dict[str, Any]]:
         """
         Sends an unlock command to the specified device and waits for a response.
 
@@ -257,13 +262,20 @@ class LockManager:
 
         Args:
             lock_id: The unique identifier of the lock device to control.
+            retry_attempts: The max number of retry attempts before giving up.
 
         Returns:
             A dictionary containing the updated device state, or None if the device
             is unknown. If the device fails to respond in time, the state will include
             {"connected": False, "error": "timeout"}.
         """
-        return self._send_command_and_wait(lock_id, "unlock")
+        logger.debug(f"[{lock_id}] Device commanded to unlock!")
+        # Try to get correct status
+        for _ in range(retry_attempts):
+            result = self._send_command_and_wait(lock_id, "unlock")
+            if result and result.get("error") is None and result.get("state") == "unlocked":
+                break # Return early on success
+        return result
 
     def _publish_and_wait(
         self, lock_id: str, topic: str, payload: Dict[str, Any], timeout: float
@@ -317,6 +329,7 @@ class LockManager:
         Returns:
             A dictionary with updated device status, or includes an error/timeout if no response.
         """
+        logger.debug(f"Device {lock_id} status queried!")
         # Queries go to status/get topic
         topic = f"devices/{lock_id}/status/get"
         payload = {"action": "get_status"}
@@ -350,6 +363,8 @@ class LockManager:
                 # Split the topic to process
                 topic = msg["topic"]
                 parts = topic.split("/")
+
+
                 # Make sure topic is valid
                 if len(parts) != 3 or parts[0] != "devices" or parts[2] != "status":
                     logger.debug(f"Ignored irrelevant topic: {topic}")
@@ -358,6 +373,9 @@ class LockManager:
                 # Get lock id and validate
                 lock_id = parts[1]
                 payload = self._validate_payload(msg.get("payload"))
+
+                logger.debug(f"Received msg on {topic} : {payload}")
+
                 if payload is None:
                     logger.warning(f"[{lock_id}] Invalid payload format or type")
                     continue
@@ -401,6 +419,11 @@ class LockManager:
             lock_id: The ID of the device reporting the error.
             error: The error message received from the device.
         """
+        # Log unseen locks - robustness check, shouldn't happen but for graceful errors
+        if lock_id not in self._device_states:
+            logger.warning(f"[{lock_id}] Ignored message from unregistered device.")
+            return
+
         # Log error and change device state
         logger.warning(f"[{lock_id}] Error from device: {error}")
         with self._state_lock:
@@ -423,12 +446,31 @@ class LockManager:
             payload: A dictionary containing status fields such as 'state', 'battery_percent',
                     and 'firmware_version'.
         """
+        # Log unseen locks - robustness check, shouldn't happen but for graceful errors
+        if lock_id not in self._device_states:
+            logger.warning(f"[{lock_id}] Ignored message from unregistered device.")
+            return
+        
+        # Get timestamp
+        ts = payload.get("timestamp")
+        if not isinstance(ts, (int, float)):
+            logger.warning(f"[{lock_id}] Status missing or invalid timestamp — ignoring")
+            return
+        
+        # Check this is the most recent state
+        with self._state_lock:
+            last_ts = self._device_states[lock_id].get("state_sent_from_device_at", 0)
+            if ts <= last_ts:
+                logger.debug(f"[{lock_id}] Ignored stale status (ts={ts}, last={last_ts})")
+                return
+        
         # Configure the state
         new_state = {
             "state": payload.get("state"),
             "battery_percent": payload.get("battery_percent"),
             "firmware_version": payload.get("firmware_version"),
             "last_updated": time.time(),
+            "state_sent_from_device_at": ts,
             "connected": True,
             "error": None,
         }
@@ -442,6 +484,8 @@ class LockManager:
         if cond:
             with cond:
                 cond.notify_all()
+        else:
+            logger.warning(f"{lock_id} not registered in thread locks!")
 
         # Trigger callback
         with self._callbacks_lock:

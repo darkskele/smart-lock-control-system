@@ -17,7 +17,7 @@ def build_lock_manager() -> LockManager:
     lock_ids = [f"lock-0{i}" for i in range(1, 5)]  # lock-01 to lock-04
     manager = LockManager(mqtt_service, lock_ids)
     manager.start()
-    time.sleep(1)  # allow subscriptions and polling to kick in
+    time.sleep(5)  # allow subscriptions and polling to kick in
     return manager
 
 

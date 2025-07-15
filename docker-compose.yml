@@ -6,11 +6,8 @@ services:
 
     container_name: mqtt-broker
 
-    # Map port 1883 from the container to the host
-    # This allows MQTT clients to connect to localhost:1883 on the host
-    # We also map 8883 for secure TLS encrypted MQTT
+    # Map 8883 for secure TLS encrypted MQTT
     ports:
-      - "1883:1883"   # Plain MQTT (optional)
       - "8883:8883"   # Secure MQTT
 
     # Mount configuration files into the container

@@ -43,7 +43,7 @@ def test_handle_status_updates_state_and_triggers_callback(mock_mqtt):
     manager.register_callback("lock1", cb)
 
     # Dummy payload
-    payload = {"state": "locked", "battery_percent": 95, "firmware_version": "v1"}
+    payload = {"state": "locked", "battery_percent": 95, "firmware_version": "v1", "timestamp": 999}
     with patch("time.time", return_value=999.0):
         manager._handle_status("lock1", payload)
 
