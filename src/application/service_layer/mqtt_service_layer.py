@@ -142,13 +142,16 @@ class MQTTService:
         Start the MQTT connection and run the background loop.
         """
         logger.info("[MQTT] Attempting connection!")
-        try:
-            # Connect to configure port
-            self.client.connect(self.broker_host, self.broker_port)
-            # Start the background thread
-            self.client.loop_start()
-        except Exception as e:
-            logger.info(f"[MQTT] Initial connection failed: {e}")
+        for attempt in range(3):
+            try:
+                # Connect to configure port
+                self.client.connect(self.broker_host, self.broker_port)
+                # Start the background thread
+                self.client.loop_start()
+                break
+            except Exception as e:
+                time.sleep(RECONNECT_BACKOFF)
+                logger.info(f"[MQTT] Initial connection failed, attempt {attempt}: {e}")
 
     def stop(self) -> None:
         """
@@ -161,24 +164,26 @@ class MQTTService:
         # Then disconnect
         self.client.disconnect()
 
-    def publish(self, topic: str, message_dict: Dict) -> None:
+    def publish(self, topic: str, message_dict: Dict, qos: int = 0, retain: bool = False) -> None:
         """
         Publish a message to the given topic.
 
         Args:
             topic (str): MQTT topic to publish to.
             message_dict (dict): Dictionary to be serialized as JSON payload.
+            qos (int): Quality of service.
+            retain (bool): Sets message as last known good message.
         """
         # Only publish to valid connections
         if self.connected:
             try:
                 # Payload to json
                 payload = json.dumps(message_dict)
-                self.client.publish(topic, payload)
+                self.client.publish(topic, payload, qos=qos, retain=retain)
             except Exception as e:
-                logger.info(f"[MQTT] Failed to publish to {topic}: {e}")
+                logger.warning(f"[MQTT] Failed to publish to {topic}: {e}")
         else:
-            logger.info("[MQTT] Cannot publish — not connected")
+            logger.warning("[MQTT] Cannot publish — not connected")
 
     def subscribe(self, topic: str, qos: int = 0) -> None:
         """

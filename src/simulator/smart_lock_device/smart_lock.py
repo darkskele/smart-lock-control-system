@@ -1,3 +1,4 @@
+import time
 from simulator.smart_lock_device.base_device import DeviceBase
 
 
@@ -23,8 +24,12 @@ class SmartLock(DeviceBase):
         Returns:
             dict: A dictionary representing the device's current status.
         """
+        # Thread safe check of state
+        with self._state_lock:
+            is_locked = self.state["locked"]
         return {
-            "state": "locked" if self.state["locked"] else "unlocked",
+            "state": "locked" if is_locked else "unlocked",
             "battery_percent": self._battery,
             "firmware_version": self._firmware_ver,
+            "timestamp": time.time()
         }

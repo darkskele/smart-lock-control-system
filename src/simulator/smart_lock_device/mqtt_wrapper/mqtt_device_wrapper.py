@@ -144,7 +144,7 @@ class MQTTDeviceWrapper:
         # Subscribe to the command status get topic
         client.subscribe(self.command_topic, qos=1)
         client.subscribe(self.status_get_topic, qos=1)
-        logger.info(
+        logger.debug(
             f"[{self.device_id}] Subscribed to:\n - {self.command_topic}\n - {self.status_get_topic}"
         )
 
@@ -180,7 +180,7 @@ class MQTTDeviceWrapper:
 
             # Status update
             if topic == self.status_get_topic:
-                logger.info(f"[{self.device_id}] Received status request")
+                logger.debug(f"[{self.device_id}] Received status request")
                 # Missing action in get status
                 if not action:
                     logger.warning(
@@ -204,7 +204,7 @@ class MQTTDeviceWrapper:
                 # Check map for callback
                 handler = self._command_handlers.get(action)
                 if handler:
-                    logger.info(f"[{self.device_id}] Handling action: {action}")
+                    logger.debug(f"[{self.device_id}] Handling action: {action}")
                     handler()
                     # Publish status in response
                     self._publish_status()
@@ -261,7 +261,7 @@ class MQTTDeviceWrapper:
                 payload = json.dumps(status)
             # Publish
             self.client.publish(self.status_topic, payload, qos=qos)
-            logger.info(
+            logger.debug(
                 f"[{self.device_id}] Published status with QoS {qos}: {payload}"
             )
         except Exception as e:

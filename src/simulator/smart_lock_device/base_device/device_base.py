@@ -1,6 +1,7 @@
 import os
 import time
 import logging
+import threading
 from typing import Dict
 from simulator.smart_lock_device.mqtt_wrapper.mqtt_device_wrapper import (
     MQTTDeviceWrapper,
@@ -29,6 +30,7 @@ class DeviceBase:
         self.device_id: str = device_id
         # Set state internals, minimum lock
         self.state: Dict[str, bool] = {"locked": True}
+        self._state_lock = threading.Lock()
         # Create wrapper
         self.device: MQTTDeviceWrapper = MQTTDeviceWrapper.from_env()
 
@@ -51,8 +53,9 @@ class DeviceBase:
 
         Sets internal state and logs the operation.
         """
-        self.state["locked"] = True
-        logger.info(f"[{self.device_id}] Locked")
+        with self._state_lock:
+            self.state["locked"] = True
+        logger.debug(f"[{self.device_id}] Locked")
 
     def _unlock(self) -> None:
         """
@@ -60,8 +63,9 @@ class DeviceBase:
 
         Sets internal state and logs the operation.
         """
-        self.state["locked"] = False
-        logger.info(f"[{self.device_id}] Unlocked")
+        with self._state_lock:
+            self.state["locked"] = False
+        logger.debug(f"[{self.device_id}] Unlocked")
 
     @property
     def is_locked(self) -> bool:

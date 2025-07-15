@@ -57,12 +57,4 @@ if [ "$GENERATE_ONLY" = false ]; then
     wt.exe new-tab --title "lock-04" wsl -e bash -c "docker logs -f lock-04" ; `
     wt.exe new-tab --title "Smart Lock CLI" wsl -e bash -c "docker attach cli"
   '
-  echo "Broker logs:"
-  docker logs mqtt-broker --tail 10
-
-  for i in $(seq -w 1 $NUM_DEVICES); do
-    DEVICE_ID="lock-0$i"
-    echo "Device '$DEVICE_ID' logs:"
-    docker logs "$DEVICE_ID" --tail 10
-  done
 fi
