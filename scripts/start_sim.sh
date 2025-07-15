@@ -43,10 +43,6 @@ bash "$SCRIPTS_DIR/generate_cert.sh" broker ./broker/certs
 echo "Returning to project root..."
 cd "$PROJECT_ROOT"
 
-docker-compose down
-docker-compose up -d --build
-
-
 if [ "$GENERATE_ONLY" = false ]; then
   echo "Restarting services with Docker Compose..."
   docker-compose down

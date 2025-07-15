@@ -24,9 +24,9 @@ jobs:
 
     - name: Run integration tests
       run: |
-        docker-compose -f docker-compose.yml -f docker-compose.test.yml up --build --exit-code-from cli
+        docker compose -f docker-compose.yml -f docker-compose.test.yml up --build --exit-code-from cli
       shell: bash
 
     - name: Tear down containers
       if: always()
-      run: docker-compose down --remove-orphans
+      run: docker compose down --remove-orphans
