@@ -1,0 +1,30 @@
+name: CI - Unit Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Miniconda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        environment-file: environment.yml
+        auto-activate-base: false
+        activate-environment: smartlock-sim
+        python-version: "3.11"
+        mamba-version: "*"
+
+    - name: Install project dependencies
+      run: poetry install
+
+    - name: Run unit tests
+      run: poetry run pytest -v
