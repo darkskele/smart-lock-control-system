@@ -2,7 +2,10 @@ import os
 import logging
 from simulator.smart_lock_device import SmartLock
 
-logging.basicConfig(level=logging.DEBUG, format="[%(name)s] %(levelname)s: %(message)s")
+# Get log level from config
+log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()
+log_level = getattr(logging, log_level_str, logging.INFO)
+logging.basicConfig(level=log_level, format="[%(name)s] %(levelname)s: %(message)s")
 
 
 if __name__ == "__main__":

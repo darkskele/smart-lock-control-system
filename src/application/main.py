@@ -1,10 +1,14 @@
+import os
 import time
 import logging
 from typing import Optional
 from application.service_layer import MQTTService
 from application.state_manager import LockManager
 
-logging.basicConfig(level=logging.INFO, format="[%(name)s] %(levelname)s: %(message)s")
+# Get log level from config
+log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()
+log_level = getattr(logging, log_level_str, logging.INFO)
+logging.basicConfig(level=log_level, format="[%(name)s] %(levelname)s: %(message)s")
 
 
 def build_lock_manager() -> LockManager:

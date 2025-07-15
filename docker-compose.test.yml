@@ -1,0 +1,7 @@
+services:
+  cli:
+    # Override test command
+    command: python /app/test_end_to_end.py
+    volumes:
+      - ./tests/test_end_to_end.py:/app/test_end_to_end.py
+      - ./certs/ca.crt:/certs/ca.crt

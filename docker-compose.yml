@@ -47,35 +47,78 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-  # Shared lock template
-  lock-base: &lock-template
+  # Simulated Smart Lock Device - each point to there own env
+  lock-01:
     build:
       context: .
       dockerfile: src/simulator/simulators_devices/Dockerfile
     volumes:
-        - ./certs/ca.crt:/certs/ca.crt 
+      - ./certs/ca.crt:/certs/ca.crt 
+    container_name: lock-01
+    environment:
+      - DEVICE_ID=lock-01
+      - MQTT_HOST=mqtt-broker
+      - PORT=8883
+      - MQTT_USERNAME=lock_01
+      - MQTT_PASSWORD=pwd01
+      - MQTT_CA=/certs/ca.crt
+      - LOG_LEVEL=INFO
     depends_on:
       - mqtt-broker
-  # Simulated Smart Lock Device - each point to there own env and certs
-  lock-01:
-      <<: *lock-template
-      container_name: lock-01
-      env_file: ./src/simulator/simulators_devices/lock-01/.env
-      command: python src/simulator/simulators_devices/lock-01/run_device.py
+    command: python src/simulator/simulators_devices/lock-01/run_device.py
   lock-02:
-    <<: *lock-template
+    build:
+      context: .
+      dockerfile: src/simulator/simulators_devices/Dockerfile
+    volumes:
+      - ./certs/ca.crt:/certs/ca.crt 
     container_name: lock-02
-    env_file: ./src/simulator/simulators_devices/lock-02/.env
+    environment:
+      - DEVICE_ID=lock-02
+      - MQTT_HOST=mqtt-broker
+      - PORT=8883
+      - MQTT_USERNAME=lock_02
+      - MQTT_PASSWORD=pwd02
+      - MQTT_CA=/certs/ca.crt
+      - LOG_LEVEL=INFO
+    depends_on:
+      - mqtt-broker
     command: python src/simulator/simulators_devices/lock-02/run_device.py
   lock-03:
-    <<: *lock-template
+    build:
+      context: .
+      dockerfile: src/simulator/simulators_devices/Dockerfile
+    volumes:
+      - ./certs/ca.crt:/certs/ca.crt 
     container_name: lock-03
-    env_file: ./src/simulator/simulators_devices/lock-03/.env
+    environment:
+      - DEVICE_ID=lock-03
+      - MQTT_HOST=mqtt-broker
+      - PORT=8883
+      - MQTT_USERNAME=lock_03
+      - MQTT_PASSWORD=pwd03
+      - MQTT_CA=/certs/ca.crt
+      - LOG_LEVEL=INFO
+    depends_on:
+      - mqtt-broker
     command: python src/simulator/simulators_devices/lock-03/run_device.py
   lock-04:
-    <<: *lock-template
+    build:
+      context: .
+      dockerfile: src/simulator/simulators_devices/Dockerfile
+    volumes:
+      - ./certs/ca.crt:/certs/ca.crt 
     container_name: lock-04
-    env_file: ./src/simulator/simulators_devices/lock-04/.env
+    environment:
+      - DEVICE_ID=lock-04
+      - MQTT_HOST=mqtt-broker
+      - PORT=8883
+      - MQTT_USERNAME=lock_04 
+      - MQTT_PASSWORD=pwd04
+      - MQTT_CA=/certs/ca.crt
+      - LOG_LEVEL=INFO
+    depends_on:
+      - mqtt-broker
     command: python src/simulator/simulators_devices/lock-04/run_device.py
   cli:
     build:
@@ -91,6 +134,7 @@ services:
       - MQTT_USERNAME=lockmgr 
       - MQTT_PASSWORD=mstpwd
       - MQTT_CA=/certs/ca.crt
+      - LOG_LEVEL=INFO
     volumes:
       - ./certs/ca.crt:/certs/ca.crt
     depends_on:
