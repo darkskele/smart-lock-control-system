@@ -23,7 +23,9 @@ jobs:
         mamba-version: "*"
 
     - name: Install project dependencies
-      run: poetry install
+      run: |
+        conda activate smartlock-sim
+        poetry install
 
     - name: Run unit tests
       run: poetry run pytest -v
