@@ -86,6 +86,7 @@ class LockManager:
         # Start thread
         self._running = True
         self._main_thread.start()
+        self._mqtt_service.start()
         # Start status polling
         self._poll_thread.start()
         logger.info("LockManager started")
@@ -109,6 +110,7 @@ class LockManager:
         # Wait for threads
         self._main_thread.join(timeout=2.0)
         self._poll_thread.join(timeout=2.0)
+        self._mqtt_service.stop()
 
         logger.info("LockManager stopped")
 
@@ -120,6 +122,8 @@ class LockManager:
         while self._running:
             # Query status
             for lock_id in self._lock_ids:
+                if not self._running:
+                    break
                 self.query_status(lock_id)
             # Check for stale devices
             self._check_stale_devices(max_age=10.0)

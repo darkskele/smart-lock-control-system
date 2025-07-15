@@ -52,6 +52,8 @@ services:
     build:
       context: .
       dockerfile: src/simulator/simulators_devices/Dockerfile
+    volumes:
+        - ./certs/ca.crt:/certs/ca.crt 
     depends_on:
       - mqtt-broker
   # Simulated Smart Lock Device - each point to there own env and certs
@@ -59,34 +61,41 @@ services:
       <<: *lock-template
       container_name: lock-01
       env_file: ./src/simulator/simulators_devices/lock-01/.env
-      volumes:
-        - ./src/simulator/simulators_devices/lock-01/certs:/certs
-        - ./certs/ca.crt:/certs/ca.crt 
       command: python src/simulator/simulators_devices/lock-01/run_device.py
   lock-02:
     <<: *lock-template
     container_name: lock-02
     env_file: ./src/simulator/simulators_devices/lock-02/.env
-    volumes:
-      - ./src/simulator/simulators_devices/lock-02/certs:/certs
-      - ./certs/ca.crt:/certs/ca.crt 
     command: python src/simulator/simulators_devices/lock-02/run_device.py
   lock-03:
     <<: *lock-template
     container_name: lock-03
     env_file: ./src/simulator/simulators_devices/lock-03/.env
-    volumes:
-      - ./src/simulator/simulators_devices/lock-03/certs:/certs
-      - ./certs/ca.crt:/certs/ca.crt 
     command: python src/simulator/simulators_devices/lock-03/run_device.py
   lock-04:
     <<: *lock-template
     container_name: lock-04
     env_file: ./src/simulator/simulators_devices/lock-04/.env
-    volumes:
-      - ./src/simulator/simulators_devices/lock-04/certs:/certs
-      - ./certs/ca.crt:/certs/ca.crt 
     command: python src/simulator/simulators_devices/lock-04/run_device.py
+  cli:
+    build:
+      context: .
+      dockerfile: src/application/Dockerfile
+    container_name: cli
+    stdin_open: true           # Allow interactive CLI
+    tty: true                  # Attach a terminal
+    environment:
+      - DEVICE_ID=cli
+      - MQTT_HOST=mqtt-broker
+      - MQTT_PORT=8883
+      - MQTT_USERNAME=lockmgr 
+      - MQTT_PASSWORD=mstpwd
+      - MQTT_CA=/certs/ca.crt
+    volumes:
+      - ./certs/ca.crt:/certs/ca.crt
+    depends_on:
+      - mqtt-broker
+    command: python src/application/main.py
 
 # Persist outside of container
 volumes:

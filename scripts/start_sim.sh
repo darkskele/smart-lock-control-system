@@ -34,24 +34,23 @@ bash "$SCRIPTS_DIR/generate_ca.sh"
 echo "Generating TLS certificate for broker..."
 bash "$SCRIPTS_DIR/generate_cert.sh" broker ./broker/certs
 
-for i in $(seq -w 1 $NUM_DEVICES); do
-  DEVICE_ID="lock-0$i"
-  DEVICE_CERT_DIR="$PROJECT_ROOT/src/simulator/simulators_devices/$DEVICE_ID/certs"
-
-  echo "Generating TLS certificate for device '$DEVICE_ID'..."
-  bash "$SCRIPTS_DIR/generate_cert.sh" "$DEVICE_ID" "$DEVICE_CERT_DIR"
-
-  echo "Creating password entry for '$DEVICE_ID'..."
-  docker run --rm -v "$BROKER:/mosquitto/config" eclipse-mosquitto \
-    mosquitto_passwd -b /mosquitto/config/passwd "$DEVICE_ID" "pwd$i"
-done
-
 echo "Returning to project root..."
 cd "$PROJECT_ROOT"
 
 echo "Restarting services with Docker Compose..."
 docker-compose down
 docker-compose up -d --build
+
+echo "Opening Windows Terminal tabs from PowerShell..."
+
+powershell.exe -Command '
+  wt.exe new-tab --title "MQTT Broker" wsl -e bash -c "docker logs -f mqtt-broker" ; `
+  wt.exe new-tab --title "lock-01" wsl -e bash -c "docker logs -f lock-01" ; `
+  wt.exe new-tab --title "lock-02" wsl -e bash -c "docker logs -f lock-02" ; `
+  wt.exe new-tab --title "lock-03" wsl -e bash -c "docker logs -f lock-03" ; `
+  wt.exe new-tab --title "lock-04" wsl -e bash -c "docker logs -f lock-04" ; `
+  wt.exe new-tab --title "Smart Lock CLI" wsl -e bash -c "docker attach cli"
+'
 
 echo "Broker logs:"
 docker logs mqtt-broker --tail 10

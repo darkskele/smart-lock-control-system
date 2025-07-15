@@ -8,7 +8,9 @@ start:
 
 # Stop the MQTT broker container and remove the network.
 stop:
-	docker-compose down
+	docker-compose down --remove-orphans
+	docker network prune -f
+	docker volume prune -f
 
 # Show logs from the running MQTT broker container.
 logs_broker:
@@ -25,6 +27,8 @@ logs_lock_04:
 
 # Fully rebuild the container image without using cache.
 rebuild:
-	docker-compose down
+	docker-compose down --remove-orphans
+	docker network prune -f
+	docker volume prune -f
 	docker-compose build --no-cache
 	docker-compose up -d

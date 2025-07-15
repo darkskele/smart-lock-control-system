@@ -11,7 +11,6 @@ from paho.mqtt.enums import CallbackAPIVersion
 
 logger = logging.getLogger("MQTTServiceLayer")
 
-MAX_RECONNECT_ATTEMPTS = 5
 RECONNECT_BACKOFF = 5  # seconds
 
 
@@ -28,8 +27,7 @@ class MQTTService:
         username: Optional[str] = None,
         password: Optional[str] = None,
         tls_ca: Optional[str] = None,
-        tls_cert: Optional[str] = None,
-        tls_key: Optional[str] = None,
+        service_id: str = "ServiceLayer",
         message_queue: Optional[queue.Queue] = None,
     ) -> None:
         """
@@ -41,7 +39,6 @@ class MQTTService:
             username (str, optional): Username for broker authentication.
             password (str, optional): Password for broker authentication.
             tls_ca (str, optional): Path to CA certificate file for TLS.
-            tls_cert (str, optional): Path to client certificate file for TLS.
             tls_key (str, optional): Path to client key file for TLS.
             message_queue (queue.Queue, optional): A queue to place incoming parsed messages into.
         """
@@ -51,8 +48,6 @@ class MQTTService:
         self.username = username
         self.password = password
         self.tls_ca = tls_ca
-        self.tls_cert = tls_cert
-        self.tls_key = tls_key
         self._lock = threading.Lock()
 
         # Received message queue
@@ -61,12 +56,15 @@ class MQTTService:
 
         # MQTT client and setup
         self.client = Client(
-            protocol=mqtt.MQTTv5, callback_api_version=CallbackAPIVersion.VERSION2
+            protocol=mqtt.MQTTv5,
+            callback_api_version=CallbackAPIVersion.VERSION2,
+            client_id=service_id,
         )
+        self.client.reconnect_delay_set(min_delay=1, max_delay=RECONNECT_BACKOFF)
         if username and password:
             self.client.username_pw_set(username, password)
         if tls_ca:
-            self.client.tls_set(ca_certs=tls_ca, certfile=tls_cert, keyfile=tls_key)
+            self.client.tls_set(ca_certs=tls_ca)
 
         # Callback setups
         self.client.on_connect = self._on_connect
@@ -75,9 +73,7 @@ class MQTTService:
 
         # State data
         self._connected: bool = False
-        self._set_connected(True)
-        self._should_run: bool = True
-        self._loop_thread = threading.Thread(target=self._loop, daemon=True)
+        self._set_connected(False)
 
         # Connection metrics
         self._last_reconnect_attempt_time: Optional[float] = None
@@ -107,8 +103,7 @@ class MQTTService:
             username=os.environ["MQTT_USERNAME"],
             password=os.environ["MQTT_PASSWORD"],
             tls_ca=os.environ.get("MQTT_CA"),
-            tls_cert=os.environ.get("MQTT_CERT"),
-            tls_key=os.environ.get("MQTT_KEY"),
+            service_id=os.environ.get("DEVICE_ID", "lock_mgr"),
         )
 
     @property
@@ -172,13 +167,14 @@ class MQTTService:
         """
         Start the MQTT connection and run the background loop.
         """
+        logger.info("[MQTT] Attempting connection!")
         try:
             # Connect to configure port
             self.client.connect(self.broker_host, self.broker_port)
+            # Start the background thread
+            self.client.loop_start()
         except Exception as e:
             logger.info(f"[MQTT] Initial connection failed: {e}")
-        # Start loop
-        self._loop_thread.start()
 
     def stop(self) -> None:
         """
@@ -186,12 +182,10 @@ class MQTTService:
         """
         # Disconnect and break loop
         logger.info("MQTT client disconnected")
-        self._should_run = False
-        self.client.disconnect()
         # Clean up internal threads, if any
         self.client.loop_stop()
-        # Wait for the loop to fully exit
-        self._loop_thread.join()
+        # Then disconnect
+        self.client.disconnect()
 
     def publish(self, topic: str, message_dict: Dict) -> None:
         """
@@ -254,7 +248,9 @@ class MQTTService:
         except queue.Empty:
             return None
 
-    def _on_connect(self, client: mqtt.Client, userdata, flags, rc: int) -> None:
+    def _on_connect(
+        self, client: mqtt.Client, userdata, flags, rc: int, properties=None
+    ) -> None:
         """
         Callback triggered on successful connection to the broker.
         """
@@ -267,7 +263,9 @@ class MQTTService:
             logger.info(f"[MQTT] Subscribed (deferred): {topic}")
         self._pending_subscriptions.clear()
 
-    def _on_disconnect(self, client: mqtt.Client, userdata, rc: int) -> None:
+    def _on_disconnect(
+        self, client: mqtt.Client, userdata, disconnect_flags, rc, properties=None
+    ) -> None:
         """
         Callback triggered on disconnection from the broker.
         """
@@ -281,6 +279,7 @@ class MQTTService:
         Args:
             msg (MQTTMessage): Incoming MQTT message.
         """
+        logger.debug("[MQTT] Received message!")
         decoded_payload = msg.payload.decode("utf-8", errors="replace")
         try:
             # Payload to dict
@@ -304,54 +303,3 @@ class MQTTService:
             )
         except Exception as e:
             logger.info(f"[MQTT] Error parsing message on topic '{msg.topic}': {e}")
-
-    def _loop(self) -> None:
-        """
-        Runs the MQTT loop to process network traffic and automatically attempts reconnects,
-        with shutdown and backoff control.
-        """
-        reconnect_attempts = 0
-
-        while self._should_run:
-            try:
-                # Run one iteration of the MQTT loop (blocking up to 1s)
-                self.client.loop(timeout=1.0)
-
-                if not self.connected:
-                    if reconnect_attempts >= MAX_RECONNECT_ATTEMPTS:
-                        logger.info("[MQTT] Max reconnect attempts reached. Stopping.")
-                        break
-
-                    logger.info(
-                        f"[MQTT] Attempting reconnect ({reconnect_attempts + 1}/{MAX_RECONNECT_ATTEMPTS})..."
-                    )
-                    time.sleep(RECONNECT_BACKOFF)
-
-                    # Exit cleanly if we're shutting down
-                    if not self._should_run:
-                        break
-
-                    try:
-                        # Set connection metrics
-                        with self._metrics_lock:
-                            self._last_reconnect_attempt_time = time.time()
-                            self._reconnect_attempts += 1
-                        # Attempt to reconnect
-                        self.client.reconnect()
-                    except Exception as e:
-                        logger.info(f"[MQTT] Reconnect failed: {e}")
-
-                else:
-                    with self._metrics_lock:
-                        self._reconnect_attempts = 0  # Reset on successful loop
-
-            except Exception as e:
-                logger.info(f"[MQTT] Loop error: {e}")
-                time.sleep(5)
-
-        # Safe disconnect on exit
-        if self.connected:
-            try:
-                self.client.disconnect()
-            except Exception:
-                pass
